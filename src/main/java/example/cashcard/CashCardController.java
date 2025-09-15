@@ -24,21 +24,22 @@ public class CashCardController {
         }
     }
 
-    @PostMapping("balance/{requestedId}")
-    public ResponseEntity<CashCard> balance(@PathVariable() Long requestedId, @RequestBody() Double amount) {
+    @PostMapping(value = "balance/{requestedId}", consumes = "application/json")
+    public ResponseEntity<CashCard> balance(@PathVariable() Long requestedId, @RequestBody() BalanceRequestDto input) {
+        // Statt das DTO kann man auch Map<String, String> balance verwenden nehmen
         if (!cashCards.containsKey(requestedId)) {
             return ResponseEntity.notFound().build();
         }
         CashCard cashCard = cashCards.get(requestedId);
-        cashCard.balance(amount);
+        cashCard.balance(input.amount);
         return ResponseEntity.ok(cashCard);
     }
 
     @PostMapping("create")
     public ResponseEntity<CashCard> create() {
-        long id = ++nextId;
+        long id = nextId++;
         while (cashCards.containsKey(id)) {
-            id = ++nextId;
+            id = nextId++;
         }
         CashCard cashCard = new CashCard(id, 0.0);
         cashCards.put(id, cashCard);
@@ -53,5 +54,9 @@ public class CashCardController {
 
         cashCards.put(cashCard.getId(), cashCard);
         return ResponseEntity.ok(cashCard);
+    }
+
+    private record BalanceRequestDto(Double amount) {
+
     }
 }

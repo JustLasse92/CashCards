@@ -10,7 +10,11 @@ import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -31,30 +35,48 @@ class CashCardApplicationTests {
     }
 
     @Test
-    void findByIdTest() {
-
+    void createNewCashCardTest() {
+        ResponseEntity<CashCard> response = restTemplate.postForEntity("/cashcards/create", null, CashCard.class);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        CashCard cashCard = response.getBody();
+        assertNotNull(cashCard);
+        assertNotNull(cashCard.getId());
+        // Reihenfolge der Tests bestimmt, welche ID vergeben wird
+        //  assertEquals(0L, cashCard.getId());
+        assertThat(cashCard.getAmount()).isEqualTo(0.0);
     }
 
     @Test
-    void shouldReturnACashCardWhenDataIsSaved() {
-        Double amount = 5452.45;
-        CashCard cashCard = new CashCard(-1L, amount);
+    void createAndReturnACashCardTest() {
+        ResponseEntity<CashCard> response = restTemplate.postForEntity("/cashcards/create", null, CashCard.class);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        CashCard cashCard = response.getBody();
+        assertNotNull(cashCard);
+        assertNotNull(cashCard.getId());
 
-//        ResponseEntity<CashCard> addResponse = restTemplate.postForEntity("/cashcards/add?id=" + id + "&amount=" + amount, CashCard.class);
-        ResponseEntity<CashCard> addResponse = restTemplate.postForEntity("/cashcards/addF", cashCard, CashCard.class);
-        assertThat(addResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
-        CashCard addedCashCard = addResponse.getBody();
-        assertNotNull(addedCashCard);
-        assertNotNull(addedCashCard.id());
-        assertEquals(amount, addedCashCard.amount());
-
-        Long id = addedCashCard.id();
-        ResponseEntity<CashCard> getResponse = restTemplate.getForEntity("/cashcards/" + id, CashCard.class);
+        ResponseEntity<CashCard> getResponse = restTemplate.getForEntity("/cashcards/" + cashCard.getId(), CashCard.class);
         assertThat(getResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
-        CashCard getCashCard = getResponse.getBody();
-        assertNotNull(getCashCard);
-        assertEquals(id, getCashCard.id());
-        assertEquals(amount, addedCashCard.amount());
+        assertThat(getResponse.getBody()).isEqualTo(cashCard);
+    }
+
+    @Test
+    void balanceTest() {
+        ResponseEntity<CashCard> response = restTemplate.postForEntity("/cashcards/create", null, CashCard.class);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        CashCard cashCard = response.getBody();
+        assertNotNull(cashCard);
+        assertNotNull(cashCard.getId());
+        assertThat(cashCard.getAmount()).isEqualTo(0.0);
+
+        Map<String, String> map = new HashMap<>();
+        map.put("amount", "30.0");
+
+        ResponseEntity<CashCard> getResponse = restTemplate.postForEntity("/cashcards/balance/" + cashCard.getId(), map, CashCard.class);
+        assertThat(getResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+        CashCard balancedCashCard = getResponse.getBody();
+        assertNotNull(balancedCashCard);
+        assertEquals(cashCard.getId(), balancedCashCard.getId());
+        assertEquals(30.0, balancedCashCard.getAmount());
     }
 
     @Test
