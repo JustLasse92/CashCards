@@ -31,12 +31,18 @@ class CashCardApplicationTests {
 
     private static final List<Long> INSERTED_IDS = List.of(99L, 100L, 101L);
     private static final List<Double> INSERTED_AMOUNTS = List.of(223.45, 123.45, 323.45);
+    private static final List<String> INSERTED_OWNERS = List.of("owner1", "owner2", "owner3");
     private static final List<CashCard> INSERTED_CASH_CARDS;
 
     static {
         INSERTED_CASH_CARDS = new ArrayList<>();
         for (int i = 0; i < INSERTED_IDS.size(); i++) {
-            INSERTED_CASH_CARDS.add(CashCard.builder().id(INSERTED_IDS.get(i)).amount(INSERTED_AMOUNTS.get(i)).build());
+            CashCard cashCard = CashCard.builder()
+                    .id(INSERTED_IDS.get(i))
+                    .amount(INSERTED_AMOUNTS.get(i))
+                    .owner(INSERTED_OWNERS.get(i))
+                    .build();
+            INSERTED_CASH_CARDS.add(cashCard);
         }
     }
 
@@ -122,14 +128,16 @@ class CashCardApplicationTests {
 
     @Test
     void createNewCashCardTest() {
-        ResponseEntity<CashCard> response = restTemplate.postForEntity("/cashcards", null, CashCard.class);
+        CashCard requestedCashCard = new CashCard(null, 250.0, "requestOwner");
+        ResponseEntity<CashCard> response = restTemplate.postForEntity("/cashcards", requestedCashCard, CashCard.class);
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
-        assertThat(response.getHeaders().getLocation() != null);
         CashCard cashCard = response.getBody();
         assertNotNull(cashCard);
         assertNotNull(cashCard.getId());
+        assertThat(response.getHeaders().getLocation() != null);
         assertThat(response.getHeaders().getLocation().toString().equals("/cashcards/" + cashCard.getId()));
-        assertThat(cashCard.getAmount()).isEqualTo(0.0);
+        assertThat(cashCard.getAmount()).isEqualTo(requestedCashCard.getAmount());
+        assertThat(cashCard.getOwner()).isEqualTo(requestedCashCard.getOwner());
 
         ResponseEntity<CashCard> responseForCreatedEntity = restTemplate.getForEntity(response.getHeaders().getLocation(), CashCard.class);
         assertThat(responseForCreatedEntity.getStatusCode()).isEqualTo(HttpStatus.OK);

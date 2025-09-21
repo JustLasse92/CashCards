@@ -47,14 +47,9 @@ public class CashCardController {
     }
 
     @PostMapping()
-    private ResponseEntity<CashCard> create(UriComponentsBuilder builder) {
+    private ResponseEntity<CashCard> create(@RequestBody CashCard cashCard, UriComponentsBuilder builder) {
         // UriComponentsBuilder wird vom IoC-Container bereitgestellt. @Autowired wird meist nur bei Feldern und eigenen
         // Methoden verwendet. In den Parametern von Handler-Methoden werden die Objekte automatisch bereitgestellt
-        CashCard cashCard = CashCard.builder()
-                .id(null)
-                .amount(0.0)
-                .build();
-
         CashCard savedCashCard = cashCardRepository.save(cashCard);
 
         //  HTTP-Standard (RFC 7231) sollte eine erfolgreiche POST-Anfrage, die eine neue Ressource erstellt (Status 201 Created),
