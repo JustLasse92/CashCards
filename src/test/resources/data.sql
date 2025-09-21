@@ -1,0 +1,4 @@
+/* Dieses SQL wird nur für Test ausgeführt.  */
+
+INSERT INTO CASH_CARD(ID, AMOUNT) VALUES (99, 123.45);
+INSERT INTO CASH_CARD(ID, AMOUNT) VALUES (100, 223.45);
