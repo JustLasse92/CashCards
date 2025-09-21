@@ -13,9 +13,9 @@ import org.springframework.data.annotation.Id;
 public class CashCard {
     @Id
     private Long id;
-    private Double amount;
+    private double amount;
 
-    public void balance(Double amount) {
+    public void balance(double amount) {
         this.amount += amount;
     }
 }
