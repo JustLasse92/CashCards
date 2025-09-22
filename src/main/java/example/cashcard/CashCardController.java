@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
+import java.security.Principal;
 import java.util.List;
 import java.util.Optional;
 
@@ -27,16 +28,17 @@ public class CashCardController {
 
     // Handler-Methode
     // Path-Variable, wenn man eindeutige Ressource per ID ansprechen will
+    // Principal wird automatisch mit dem angemeldeten User befüllt (sofern Security konfiguriert ist)
     @GetMapping("/{requestedId}")
-    private ResponseEntity<CashCard> findById(@PathVariable() Long requestedId) {
-        Optional<CashCard> cashCardOptional = cashCardRepository.findById(requestedId);
+    private ResponseEntity<CashCard> findById(@PathVariable() Long requestedId, Principal principal) {
+        Optional<CashCard> cashCardOptional = cashCardRepository.findByIdAndOwner(requestedId, principal.getName());
         return cashCardOptional.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @PostMapping(value = "balance/{requestedId}", consumes = "application/json")
-    private ResponseEntity<CashCard> balance(@PathVariable() Long requestedId, @RequestBody() BalanceRequestDto input) {
+    private ResponseEntity<CashCard> balance(@PathVariable() Long requestedId, @RequestBody() BalanceRequestDto input, Principal principal) {
         // Statt das DTO kann man auch Map<String, String> balance verwenden nehmen
-        ResponseEntity<CashCard> responseEntity = findById(requestedId);
+        ResponseEntity<CashCard> responseEntity = findById(requestedId, principal);
         if (!responseEntity.getStatusCode().is2xxSuccessful() || !responseEntity.hasBody()) {
             return ResponseEntity.notFound().build();
         }
@@ -47,9 +49,10 @@ public class CashCardController {
     }
 
     @PostMapping()
-    private ResponseEntity<CashCard> create(@RequestBody CashCard cashCard, UriComponentsBuilder builder) {
+    private ResponseEntity<CashCard> create(@RequestBody CashCard cashCard, UriComponentsBuilder builder, Principal principal) {
         // UriComponentsBuilder wird vom IoC-Container bereitgestellt. @Autowired wird meist nur bei Feldern und eigenen
         // Methoden verwendet. In den Parametern von Handler-Methoden werden die Objekte automatisch bereitgestellt
+        cashCard.setOwner(principal.getName());
         CashCard savedCashCard = cashCardRepository.save(cashCard);
 
         //  HTTP-Standard (RFC 7231) sollte eine erfolgreiche POST-Anfrage, die eine neue Ressource erstellt (Status 201 Created),
@@ -66,9 +69,9 @@ public class CashCardController {
     @GetMapping
     // Pageable wird automatisch aus den Request-Parametern page und size befüllt
     // Standardwerte können in application.properties mit spring.data.web.pageable.* konfiguriert werden
-    private ResponseEntity<List<CashCard>> findAll(Pageable pageable) {
+    private ResponseEntity<List<CashCard>> findAll(Pageable pageable, Principal principal) {
         // Das Repository muss allerdings das Paging unterstützen (extends PagingAndSortingRepository)
-        Page<CashCard> page = cashCardRepository.findAll(
+        Page<CashCard> page = cashCardRepository.findByOwner(principal.getName(),
                 PageRequest.of(
                         pageable.getPageNumber(),
                         pageable.getPageSize(),
